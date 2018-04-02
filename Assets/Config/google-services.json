@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "212142955153",
+    "firebase_url": "https://gavlauctiongame-57e11.firebaseio.com",
+    "project_id": "gavlauctiongame-57e11",
+    "storage_bucket": "gavlauctiongame-57e11.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:212142955153:android:a473ba4f6169047d",
+        "android_client_info": {
+          "package_name": "com.gavl.auctiongame"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "212142955153-bmjp2ipvsnf26bvsla2udrrgp5kn3s1o.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-0mtDXBg5G68VsmE3IuKNQKlRtuPKGUg"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
