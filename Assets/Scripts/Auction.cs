@@ -154,8 +154,6 @@ public class Auction : MonoBehaviour {
 		//dynamic agent fees
 		userbalance = userbalance + (int) ((housevalue - agentfees) * luxuryrate);
 
-
-		}
 		if(auctionopen == false) {
 			LogText.GetComponent<Text> ().text += "\n Bidding not ready!";
 		}
