@@ -12,6 +12,6 @@ public class FirebaseSetup : MonoBehaviour {
         FirebaseApp.DefaultInstance.SetEditorDatabaseUrl("https://gavlauctiongame-57e11.firebaseio.com/");
 
         // Get the root reference location of the database.
-        DatabaseReference reference = FirebaseDatabase.DefaultInstance.RootReference;
+        DatabaseReference dbref = FirebaseDatabase.DefaultInstance.RootReference;
     }
 }
