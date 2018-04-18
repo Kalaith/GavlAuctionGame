@@ -14,6 +14,7 @@ public class Player {
     string uid;
 
     public Player(string uid, string dn, string ea, System.Uri pu) {
+        this.uid = uid;
         DisplayName = dn;
         EmailAddress = ea;
         PhotoUrl = pu;

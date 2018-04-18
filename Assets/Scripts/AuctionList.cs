@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using Firebase;
 using Firebase.Database;
 using Firebase.Unity.Editor;
@@ -21,6 +22,12 @@ public class AuctionList : MonoBehaviour {
         dbref.ChildChanged += HandleChildChanged;
         dbref.ChildRemoved += HandleChildRemoved;
         dbref.ChildMoved += HandleChildMoved;
+
+        GameObject auth = GameObject.Find("Authentication");
+
+        Authentication other = (Authentication)auth.GetComponent(typeof(Authentication));
+
+        Debug.Log(other.p.Uid);
 
         listActions();
     }
@@ -47,12 +54,19 @@ public class AuctionList : MonoBehaviour {
                         // Create a game object, currently just a button, should be something fancier later.
                         GameObject entry = Instantiate(eventTemplate) as GameObject;
                         entry.SetActive(true);
-                        entry.GetComponent<AuctionListEntry>().SetText(item.ToString());
+                        
+                        entry.GetComponent<AuctionListEntry>().SetText(item.ToString(), child.Key);
                         entry.transform.SetParent(eventTemplate.transform.parent, false);
 
                     }
                 }
         });
+    }
+
+    public void onBtnClicked(string auid) {
+        
+        /**/
+
     }
 
     void HandleChildChanged(object sender, ChildChangedEventArgs args) {

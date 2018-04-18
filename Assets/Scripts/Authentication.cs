@@ -9,10 +9,12 @@ public class Authentication : MonoBehaviour {
     FirebaseAuth auth;
     FirebaseUser user;
 
-    Player p;
+    public Player p;
 
-    public Text email;
-    public Text password;
+    public InputField email;
+    public InputField password;
+    public GameObject loginPanel;
+    public GameObject auctionPanel;
 
     // Use this for initialization
     void Start () {
@@ -41,8 +43,6 @@ public class Authentication : MonoBehaviour {
             user = auth.CurrentUser;
             if (signedIn) {
                 Debug.Log("Signed in " + user.UserId);
-                p = new Player(user.UserId, user.DisplayName, user.Email, user.PhotoUrl);
-
             }
         }
     }
@@ -50,47 +50,59 @@ public class Authentication : MonoBehaviour {
     void OnDestroy() {
         auth.StateChanged -= AuthStateChanged;
         auth = null;
+        p = null;
     }
 
     public void logoutUser() {
         auth.SignOut();
+        p = null;
     }
 
     public void createUser() {
 
         auth.CreateUserWithEmailAndPasswordAsync(email.text, password.text).ContinueWith(task => {
             if (task.IsCanceled) {
-                Debug.LogError("CreateUserWithEmailAndPasswordAsync was canceled.");
+                Debug.Log("CreateUserWithEmailAndPasswordAsync was canceled.");
                 return;
             }
             if (task.IsFaulted) {
-                Debug.LogError("CreateUserWithEmailAndPasswordAsync encountered an error: " + task.Exception);
+                Debug.Log("CreateUserWithEmailAndPasswordAsync encountered an error: " + task.Exception);
                 return;
             }
 
             // Firebase user has been created.
             FirebaseUser newUser = task.Result;
             Debug.LogFormat("Firebase user created successfully: {0} ({1})", newUser.DisplayName, newUser.UserId);
+            p = new Player(newUser.UserId, newUser.DisplayName, email.text, null);
 
+            loginPanel.SetActive(false);
+            auctionPanel.SetActive(true);
         });
     }
 
     public void loginUser() {
-
         auth.SignInWithEmailAndPasswordAsync(email.text, password.text).ContinueWith(task => {
             if (task.IsCanceled) {
-                Debug.LogError("SignInWithEmailAndPasswordAsync was canceled.");
+                Debug.Log("SignInWithEmailAndPasswordAsync was canceled.");
                 return;
             }
             if (task.IsFaulted) {
-                Debug.LogError("SignInWithEmailAndPasswordAsync encountered an error: " + task.Exception);
+                Debug.Log("SignInWithEmailAndPasswordAsync encountered an error: " + task.Exception);
                 return;
             }
 
             FirebaseUser newUser = task.Result;
             Debug.LogFormat("User signed in successfully: {0} ({1})", newUser.DisplayName, newUser.UserId);
-        });
 
+            p = new Player(newUser.UserId, newUser.DisplayName, email.text, null);
+
+            loginPanel.SetActive(false);
+            auctionPanel.SetActive(true);
+
+        });
     }
 
+    public string getPlayerUID() {
+        return p.Uid;
+    }
 }
