@@ -13,8 +13,6 @@ public class Authentication : MonoBehaviour {
 
     public InputField email;
     public InputField password;
-    public GameObject loginPanel;
-    public GameObject auctionPanel;
 
     // Use this for initialization
     void Start () {
@@ -75,8 +73,6 @@ public class Authentication : MonoBehaviour {
             Debug.LogFormat("Firebase user created successfully: {0} ({1})", newUser.DisplayName, newUser.UserId);
             p = new Player(newUser.UserId, newUser.DisplayName, email.text, null);
 
-            loginPanel.SetActive(false);
-            auctionPanel.SetActive(true);
         });
     }
 
@@ -95,9 +91,6 @@ public class Authentication : MonoBehaviour {
             Debug.LogFormat("User signed in successfully: {0} ({1})", newUser.DisplayName, newUser.UserId);
 
             p = new Player(newUser.UserId, newUser.DisplayName, email.text, null);
-
-            loginPanel.SetActive(false);
-            auctionPanel.SetActive(true);
 
         });
     }
