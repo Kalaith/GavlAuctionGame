@@ -27,7 +27,7 @@ public class Register : MonoBehaviour {
 	}
 	// Update is called once per frame
 	void Update () {
-		if (Input.GetKeyDown<InputField> (KeyCode.Tab)) {
+		/*if (Input.GetKeyDown<InputField> (KeyCode.Tab)) {
 			if (username.GetComponent<InputField> ().isFocused) {
 				email.GetComponent<InputField> ().Select ();
 			}
@@ -49,5 +49,6 @@ public class Register : MonoBehaviour {
 		Email = email.GetComponent<InputField> ().text;
 		Password = password.GetComponent<InputField> ().text;
 		ConfPassword = confPassword.GetComponent<InputField> ().text;
+        */
 	}
 }
