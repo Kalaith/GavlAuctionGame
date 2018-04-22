@@ -9,11 +9,12 @@ using UnityEngine;
 
 public class AuctionListItem {
 
-    string house_uid;
-    DateTime date;
-    DateTime time;
-    int bidders;
-    const int max_bidders = 6;
+    public string house_uid;
+    public DateTime date;
+    public DateTime time;
+    public int bidders;
+    public const int max_bidders = 6;
+    public double current_price;
 
     /// <summary>
     /// A new auction, takes in a house object, a time and how many bidders
@@ -26,6 +27,7 @@ public class AuctionListItem {
         date = DateTime.Parse(d.ToShortDateString());
         time = DateTime.Parse(d.ToShortTimeString());
         bidders = b;
+        current_price = 0;
     }
 
     public AuctionListItem(IDictionary ali) {
@@ -33,6 +35,7 @@ public class AuctionListItem {
         date = Convert.ToDateTime(ali["date"]);
         time = Convert.ToDateTime(ali["time"]);
         bidders = Convert.ToInt32(ali["bidders"]);
+        current_price = Convert.ToDouble(ali["current_price"]);
     }
 
     public override string ToString() {
@@ -46,6 +49,7 @@ public class AuctionListItem {
         result["date"] = date.ToShortDateString();
         result["time"] = date.ToShortTimeString();
         result["bidders"] = bidders;
+        result["current_price"] = current_price;
 
         return result;
     }

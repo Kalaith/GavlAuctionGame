@@ -98,4 +98,8 @@ public class Authentication : MonoBehaviour {
     public string getPlayerUID() {
         return p.Uid;
     }
+    public string getPlayerName() {
+        return p.DisplayName;
+    }
+
 }
