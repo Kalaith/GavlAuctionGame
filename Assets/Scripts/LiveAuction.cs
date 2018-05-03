@@ -54,7 +54,7 @@ public class LiveAuction : MonoBehaviour {
                             if (child.Key.Equals("current_price")) {
                                 price = System.Convert.ToDouble(child.Value);
                                 current_price.text = "" + string.Format("{0:c}", price);
-                                auction_log.text = auction_log.text + " New Bid, " + string.Format("{0:c}", bid_amount) + "\n";
+                                
 
                             }
                         }
@@ -97,7 +97,7 @@ public class LiveAuction : MonoBehaviour {
                         Debug.Log(child.Key + "current_price");
                         if(child.Key.Equals("current_price")) {
                             price = System.Convert.ToDouble(child.Value);
-                            current_price.text = "$" + price.ToString();
+                            current_price.text = string.Format("{0:c}", price);
                         }
                     }
                 }
@@ -143,6 +143,8 @@ public class LiveAuction : MonoBehaviour {
         childUpdates[key] = result;
 
         dbref.UpdateChildrenAsync(childUpdates);
+
+        auction_log.text = auction_log.text + " New Bid, " + string.Format("{0:c}", bid_amount) + "\n";
 
         Debug.Log("Bidding");
     }
