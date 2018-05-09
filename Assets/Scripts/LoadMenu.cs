@@ -19,7 +19,6 @@ public class LoadMenu : MonoBehaviour {
 
     // Use this for initialization
     void Start() {
-        LoadGameLogin();
     }
 
     // Load Functions for each of the diffrent screens
@@ -30,7 +29,7 @@ public class LoadMenu : MonoBehaviour {
         menuPanel.SetActive(false);
         loginPanel.SetActive(true);
     }
-
+    
     public void LoadGameHome() {
         disableAllPanels();
 

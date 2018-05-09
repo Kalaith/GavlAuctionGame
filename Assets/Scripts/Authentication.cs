@@ -13,15 +13,17 @@ public class Authentication : MonoBehaviour {
 
     public InputField email;
     public InputField password;
+    private LoadMenu menu;
 
     // Use this for initialization
     void Start () {
         InitializeFirebase();
-
+        menu = (LoadMenu)GameObject.Find("Setup").GetComponent(typeof(LoadMenu));
+        menu.LoadGameLogin();
     }
-	
-	// Update is called once per frame
-	void Update () {
+
+    // Update is called once per frame
+    void Update () {
 		
 	}
 
@@ -72,7 +74,7 @@ public class Authentication : MonoBehaviour {
             FirebaseUser newUser = task.Result;
             Debug.LogFormat("Firebase user created successfully: {0} ({1})", newUser.DisplayName, newUser.UserId);
             p = new Player(newUser.UserId, newUser.DisplayName, email.text, null);
-
+            menu.LoadGameHome();
         });
     }
 
@@ -91,7 +93,7 @@ public class Authentication : MonoBehaviour {
             Debug.LogFormat("User signed in successfully: {0} ({1})", newUser.DisplayName, newUser.UserId);
 
             p = new Player(newUser.UserId, newUser.DisplayName, email.text, null);
-
+            menu.LoadGameHome();
         });
     }
 
