@@ -2,15 +2,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using NotificationServices = UnityEngine.iOS.NotificationServices;
-using NotificationType = UnityEngine.iOS.NotificationType;
-using LocalNotification = UnityEngine.iOS.LocalNotification;
+//using NotificationServices = UnityEngine.iOS.NotificationServices;
+//using NotificationType = UnityEngine.iOS.NotificationType;
+//using LocalNotification = UnityEngine.iOS.LocalNotification;
 //using Firebase;
 //using Firebase.Database;
 //using Firebase.Unity.Editor;
 
 public class Auction : MonoBehaviour {
-	public GameObject LogText;
+	/*public GameObject LogText;
 	public GameObject CurrentPrice;
 	public int bidnumber = 100000;
 	public int bidincrease;
@@ -165,5 +165,5 @@ public class Auction : MonoBehaviour {
 			LogText.GetComponent<Text> ().text += "\n Your Account Balance" + userbalance;
 		}
 	}
-
+    */
 }

@@ -7,7 +7,7 @@ using Firebase.Database;
 
 public class LiveAuction : MonoBehaviour {
 
-    public Text auction_log;
+    public Text auction_text;
     public Text house_address;
     public Text winning_bidder;
     public Text current_price;
@@ -18,23 +18,93 @@ public class LiveAuction : MonoBehaviour {
 
     string current_auction_uid;
 
-    Firebase.Database.DatabaseReference dbref;
+    // this is set to the start time + 10mins
+    System.DateTime auction_date;
+    // This is set to the end of the auction time.
+    System.DateTime auction_close_datetime;
 
-    AuctionListItem item;
+    Firebase.Database.DatabaseReference auction;
+    Firebase.Database.DatabaseReference auction_log;
+
+    // How many bids
+    int bids;
+    // How many bids past the 10min mark
+    int overtime_bids;
+
+    bool closed;
+    string house_uid;
 
     // Use this for initialization
     void Start () {
 
         winning_bidder.text = "Opening Price";
         current_price.text = "0";
+        bids = 0;
 
         // Object containing the authenticated user.
         auth = (Authentication)GameObject.Find("Authentication").GetComponent(typeof(Authentication));
 
         // Gets an auction, quick and dirty return the first.
         getPlayerAuction();
+    }
 
+    // Update is called once per frame
+    void Update() {
+        closeAuction();
+    }
 
+    /// <summary>
+    /// Since this is currently client driven we will handle closing the auction from here, for a production system this would need to be moved to avoid cheating.
+    /// </summary>
+    void closeAuction() {
+        Dictionary<string, System.Object> result;
+
+        // Update the current price of the auction.
+        result = new Dictionary<string, System.Object>();
+        auction = FirebaseDatabase.DefaultInstance.GetReference("auctions/" + current_auction_uid + "");
+        result["closed"] = true;
+        auction.UpdateChildrenAsync(result);
+
+    }
+
+    /// <summary>
+    /// Check to see if this auction has gone into overtime.
+    /// </summary>
+    bool isAuctionOver() {
+        System.DateTime date = System.DateTime.Now;
+        
+        if (date > auction_date) {
+            //Debug.Log("Time to close the auction");
+            return true;
+        }
+
+        // We have not gone overtime yet
+        return false;
+        
+    }
+
+    // if the auction is closed, then the winner is the one with the last bid.
+    void isWinner(string winner_uid) {
+        // only delclare them the winner if the auction is over and their ID matches the last bidder id.
+        if (isAuctionOver()) { 
+            if (winner_uid == auth.getPlayerUID()) {
+
+                Firebase.Database.DatabaseReference player_ref = FirebaseDatabase.DefaultInstance.GetReference("player/" + auth.getPlayerUID() + "/property");
+
+                // Update the current price of the auction.
+                Dictionary<string, System.Object>  purcahse_house = new Dictionary<string, System.Object>();
+
+                // Add the price we paid for the house, dont need the rest of the details.
+                purcahse_house["purchase_price"] = price;
+ 
+                Dictionary<string, System.Object> house_update = new Dictionary<string, System.Object>();
+                house_update[house_uid] = purcahse_house;
+
+                player_ref.UpdateChildrenAsync(house_update);
+
+                // TODO Work out how much money the player has, deduct the house price - the loan amount the equity on the house they already own
+            }
+        }
     }
 
     void HandleChildChanged(object sender, ChildChangedEventArgs args) {
@@ -42,8 +112,8 @@ public class LiveAuction : MonoBehaviour {
             Debug.LogError(args.DatabaseError.Message);
             return;
         } else {
-            FirebaseDatabase.DefaultInstance.GetReference("auctions/" + current_auction_uid + "/")
-                .GetValueAsync().ContinueWith(task => {
+            auction.GetValueAsync().ContinueWith(task => {
+
                     if (task.IsFaulted) {
                         Debug.Log("Unable to get auctions: " + auth.getPlayerUID());
                     } else if (task.IsCompleted) {
@@ -52,16 +122,55 @@ public class LiveAuction : MonoBehaviour {
                         foreach (DataSnapshot child in snapshot.Children) {
                             Debug.Log(child.Key + "current_price");
                             if (child.Key.Equals("current_price")) {
-                                price = System.Convert.ToDouble(child.Value);
-                                current_price.text = "" + string.Format("{0:c}", price);
-                                
-
+                                //price = System.Convert.ToDouble(child.Value);
+                                //current_price.text = "" + string.Format("{0:c}", price);
                             }
+                        if (child.Key.Equals("closed")) {
+                            closed = System.Convert.ToBoolean(child.Value);
+                            //current_price.text = "" + string.Format("{0:c}", price);
                         }
+                        if(child.Key.Equals("last_bidder")) {
+                            isWinner(child.Value.ToString());
+                        }
+
                     }
+                    }
+
                 });
         }
-        Debug.Log("HandleChildChanged" + args);
+        Debug.Log("HandleChildChanged");
+    }
+
+    // When a new bid comes in we should update the expected finish time, the current price and how many bids over time.
+    void HandleNewBid(object sender, ChildChangedEventArgs args) {
+        if (args.DatabaseError != null) {
+            Debug.LogError(args.DatabaseError.Message);
+            return;
+        } else {
+            auction_log.GetValueAsync().ContinueWith(task => {
+
+                if (task.IsFaulted) {
+                    Debug.Log("Unable to get auctions: " + auth.getPlayerUID());
+                } else if (task.IsCompleted) {
+                    DataSnapshot snapshot = task.Result;
+
+                    price += bid_amount;
+                    current_price.text = "" + string.Format("{0:c}", price);
+
+                    bids++;
+
+                    System.DateTime date = System.DateTime.Now;
+                    // Will the date of bid + 30 seconds put it past the current auction time, if so add 30 seconds - the number of bids over time, we wont reach here if we are already over time, if we are overtime such as negative seconds it should get caught.
+                    date = date.AddSeconds(30 - overtime_bids);
+                    if (date > auction_date) {
+                        auction_date = auction_date.AddSeconds(30 - overtime_bids);
+                        overtime_bids++;
+                    }
+                }
+
+                });
+        }
+        Debug.Log("HandleNewBid" + args);
     }
 
     void getPlayerAuction() {
@@ -71,13 +180,12 @@ public class LiveAuction : MonoBehaviour {
                     Debug.Log("Unable to get auctions for player: "+ auth.getPlayerUID());
                 } else if (task.IsCompleted) {
                     DataSnapshot snapshot = task.Result;
-                    Debug.Log("Children: " + snapshot.ChildrenCount.ToString());
+ 
                     foreach (DataSnapshot child in snapshot.Children) {
                         current_auction_uid = child.Key;
 
                         Firebase.Database.DatabaseReference dbref = FirebaseDatabase.DefaultInstance.GetReference("auctions/" + current_auction_uid + "");
                         dbref.ChildChanged += HandleChildChanged;
-                        Debug.Log(current_auction_uid);
                     }
                     getAuctionDetails();
                 }
@@ -86,30 +194,49 @@ public class LiveAuction : MonoBehaviour {
 
     void getAuctionDetails() {
         // Refrence to the database
-        FirebaseDatabase.DefaultInstance.GetReference("auctions/" + current_auction_uid+"/")
-            .GetValueAsync().ContinueWith(task => {
+        auction = FirebaseDatabase.DefaultInstance.GetReference("auctions/" + current_auction_uid + "");
+        auction.GetValueAsync().ContinueWith(task => {
                 if (task.IsFaulted) {
                     Debug.Log("Unable to get auctions: " + auth.getPlayerUID());
                 } else if (task.IsCompleted) {
                     DataSnapshot snapshot = task.Result;
+                    System.DateTime auction_time = System.DateTime.Now;
 
                     foreach (DataSnapshot child in snapshot.Children) {
-                        Debug.Log(child.Key + "current_price");
                         if(child.Key.Equals("current_price")) {
                             price = System.Convert.ToDouble(child.Value);
                             current_price.text = string.Format("{0:c}", price);
                         }
+                        if (child.Key.Equals("date")) {
+                            auction_date = System.Convert.ToDateTime(child.Value);
+                            current_price.text = string.Format("{0:c}", price);
+                        }
+                        if (child.Key.Equals("time")) {
+                            auction_time = System.Convert.ToDateTime(child.Value);
+
+                            auction_time = auction_time.AddMinutes(10);
+                            current_price.text = string.Format("{0:c}", price);
+                        }
+                        if (child.Key.Equals("house_uid")) {
+                            house_uid = child.Value.ToString();
+                        }
+                        if (child.Key.Equals("last_bidder")) {
+                            isWinner(child.Value.ToString());
+                        }
                     }
+
+                    auction_date = auction_date.Add(auction_time.TimeOfDay);
+
                 }
             });
-        dbref.ChildChanged += HandleChildChanged;
+        auction.ChildChanged += HandleChildChanged;
+
+        // Refrence to the database
+        auction_log = FirebaseDatabase.DefaultInstance.GetReference("auction-log/" + current_auction_uid + "/");
+        auction_log.ChildAdded += HandleNewBid;
+        // We should also read in all the entries so they can be posted to the log and update the price to match
         Debug.Log("Auction Ready");
     }
-
-    // Update is called once per frame
-    void Update () {
-		
-	}
 
 
     // Currently this should add the bid amount to the current price and update the database for it to be pushed out
@@ -118,34 +245,43 @@ public class LiveAuction : MonoBehaviour {
     // this is doing to many things atm, and should be reduced, writing to the onscreen log prob doesn't need to be done, an object should handle it from db.
     public void Bid() {
 
-        Dictionary<string, System.Object> result;
-
-        // Update the current price of the auction.
-        result = new Dictionary<string, System.Object>();
-        dbref = FirebaseDatabase.DefaultInstance.GetReference("auctions/" + current_auction_uid + "");
-        result["current_price"] = price+ bid_amount;
-        dbref.UpdateChildrenAsync(result);
-
-        // Create a log of the bid and add to DB
-        result["bidder_uid"] = auth.getPlayerUID();
-        result["bid_amount"] = bid_amount;
-
+        // Check to see if we can bid and if hasn't gone past the auction time.
         System.DateTime date = System.DateTime.Now;
+        if (date < auction_date) {
 
-        result["date"] = date.ToShortDateString();
-        result["time"] = date.ToShortTimeString();
+            Dictionary<string, System.Object> auction_result = new Dictionary<string, System.Object>();
 
-        // Get a current refrence to the db entry and update it
-        dbref = FirebaseDatabase.DefaultInstance.GetReference("auction-log/" + current_auction_uid + "");
-        // Create a new id for each log entry
-        string key = dbref.Push().Key;
-        Dictionary<string, System.Object> childUpdates = new Dictionary<string, System.Object>();
-        childUpdates[key] = result;
+            // Add who was the last bidder and the current price its at
+            auction_result["last_bidder"] = auth.getPlayerUID();
+            auction_result["current_price"] = price+bid_amount;
 
-        dbref.UpdateChildrenAsync(childUpdates);
+            auction.UpdateChildrenAsync(auction_result);
 
-        auction_log.text = auction_log.text + " New Bid, " + string.Format("{0:c}", bid_amount) + "\n";
+            Dictionary<string, System.Object> log_result;
 
-        Debug.Log("Bidding");
+            // Update the current price of the auction.
+            log_result = new Dictionary<string, System.Object>();
+            //result["current_price"] = price + bid_amount;
+            //auction.UpdateChildrenAsync(result);
+
+            // Create a log of the bid and add to DB
+            log_result["bidder_uid"] = auth.getPlayerUID();
+            //log_result["bid_amount"] = bid_amount;
+
+            log_result["date"] = date.ToShortDateString();
+            log_result["time"] = date.ToShortTimeString();
+
+            // Create a new id for each log entry
+            string key = auction_log.Push().Key;
+            Dictionary<string, System.Object> log_update = new Dictionary<string, System.Object>();
+            log_update[key] = log_result;
+
+            auction_log.UpdateChildrenAsync(log_update);
+
+            Debug.Log("Bidding");
+        } else {
+            Debug.Log("Unable to bid, auction over.");
+            closeAuction();
+        }
     }
 }

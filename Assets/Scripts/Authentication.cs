@@ -15,11 +15,26 @@ public class Authentication : MonoBehaviour {
     public InputField password;
     private LoadMenu menu;
 
+    public Text errorLog;
+    Firebase.DependencyStatus dependencyStatus = Firebase.DependencyStatus.UnavailableOther;
+
     // Use this for initialization
     void Start () {
-        InitializeFirebase();
+        errorLog.text = "Starting Authentication\n";
         menu = (LoadMenu)GameObject.Find("Setup").GetComponent(typeof(LoadMenu));
         menu.LoadGameLogin();
+
+        Firebase.FirebaseApp.CheckAndFixDependenciesAsync().ContinueWith(task => {
+            dependencyStatus = task.Result;
+            if (dependencyStatus == Firebase.DependencyStatus.Available) {
+                InitializeFirebase();
+            } else {
+                errorLog.text = (
+                  "Could not resolve all Firebase dependencies: " + dependencyStatus);
+            }
+        });
+
+        errorLog.text = "Firebase Init complete \n";
     }
 
     // Update is called once per frame
@@ -28,9 +43,14 @@ public class Authentication : MonoBehaviour {
 	}
 
     void InitializeFirebase() {
-        auth = FirebaseAuth.DefaultInstance;
+
+        errorLog.text = "a \r\n";
+        auth = Firebase.Auth.FirebaseAuth.DefaultInstance;
+        errorLog.text = "b \r\n";
         auth.StateChanged += AuthStateChanged;
+        errorLog.text = "c \r\n";
         AuthStateChanged(this, null);
+        errorLog.text = "d \r\n";
     }
 
     // Track state changes of the auth object.
@@ -38,11 +58,11 @@ public class Authentication : MonoBehaviour {
         if (auth.CurrentUser != user) {
             bool signedIn = user != auth.CurrentUser && auth.CurrentUser != null;
             if (!signedIn && user != null) {
-                Debug.Log("Signed out " + user.UserId);
+                errorLog.text += ("Signed out " + user.UserId);
             }
             user = auth.CurrentUser;
             if (signedIn) {
-                Debug.Log("Signed in " + user.UserId);
+                errorLog.text += ("Signed in " + user.UserId);
             }
         }
     }
@@ -59,42 +79,48 @@ public class Authentication : MonoBehaviour {
     }
 
     public void createUser() {
-
+        errorLog.text = "Start create user \n";
+        //TODO Clean email/password
         auth.CreateUserWithEmailAndPasswordAsync(email.text, password.text).ContinueWith(task => {
             if (task.IsCanceled) {
-                Debug.Log("CreateUserWithEmailAndPasswordAsync was canceled.");
+                errorLog.text += "CreateUserWithEmailAndPasswordAsync was canceled.";
                 return;
             }
             if (task.IsFaulted) {
-                Debug.Log("CreateUserWithEmailAndPasswordAsync encountered an error: " + task.Exception);
+                errorLog.text += "CreateUserWithEmailAndPasswordAsync encountered an error: " + task.Exception;
                 return;
             }
 
             // Firebase user has been created.
             FirebaseUser newUser = task.Result;
-            Debug.LogFormat("Firebase user created successfully: {0} ({1})", newUser.DisplayName, newUser.UserId);
+            errorLog.text += "Firebase user created successfully: " + newUser.DisplayName;
             p = new Player(newUser.UserId, newUser.DisplayName, email.text, null);
+
             menu.LoadGameHome();
         });
     }
 
     public void loginUser() {
+        //TODO Clean email/password
         auth.SignInWithEmailAndPasswordAsync(email.text, password.text).ContinueWith(task => {
+            errorLog.text = "Begin login \r\n";
             if (task.IsCanceled) {
-                Debug.Log("SignInWithEmailAndPasswordAsync was canceled.");
+                errorLog.text += ("SignInWithEmailAndPasswordAsync was canceled. \r\n");
                 return;
             }
             if (task.IsFaulted) {
-                Debug.Log("SignInWithEmailAndPasswordAsync encountered an error: " + task.Exception);
+                errorLog.text += ("SignInWithEmailAndPasswordAsync encountered an error: " + task.Exception + "\r\n");
                 return;
             }
 
             FirebaseUser newUser = task.Result;
-            Debug.LogFormat("User signed in successfully: {0} ({1})", newUser.DisplayName, newUser.UserId);
+            errorLog.text += "User signed in successfully "+ newUser.DisplayName+ "\r\n";
 
             p = new Player(newUser.UserId, newUser.DisplayName, email.text, null);
+
             menu.LoadGameHome();
         });
+
     }
 
     public string getPlayerUID() {
