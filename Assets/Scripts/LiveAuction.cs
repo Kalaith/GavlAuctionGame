@@ -50,7 +50,6 @@ public class LiveAuction : MonoBehaviour {
 
     // Update is called once per frame
     void Update() {
-        closeAuction();
     }
 
     /// <summary>
@@ -59,11 +58,23 @@ public class LiveAuction : MonoBehaviour {
     void closeAuction() {
         Dictionary<string, System.Object> result;
 
-        // Update the current price of the auction.
+        // Add the auction to the list of closed auctions
         result = new Dictionary<string, System.Object>();
-        auction = FirebaseDatabase.DefaultInstance.GetReference("auctions/" + current_auction_uid + "");
+        auction = FirebaseDatabase.DefaultInstance.GetReference("closed-auctions/" + current_auction_uid + "");
         result["closed"] = true;
+        result["house_uid"] = house_uid;
+        result["last_bidder"] = auth.getPlayerUID();
+        result["price"] = price;
+        result["date"] = auction_close_datetime.ToShortDateString();
+        result["time"] = auction_close_datetime.ToShortTimeString();
+
+        Debug.Log("Updating closed auction");
         auction.UpdateChildrenAsync(result);
+
+        // Remove the auction from the live auctions.
+        auction = FirebaseDatabase.DefaultInstance.GetReference("live-auctions/");
+        Debug.Log("removing auction: "+ current_auction_uid);
+        auction.Child(current_auction_uid).RemoveValueAsync();
 
     }
 
@@ -73,7 +84,7 @@ public class LiveAuction : MonoBehaviour {
     bool isAuctionOver() {
         System.DateTime date = System.DateTime.Now;
         
-        if (date > auction_date) {
+        if (date > auction_close_datetime) {
             //Debug.Log("Time to close the auction");
             return true;
         }
@@ -92,15 +103,29 @@ public class LiveAuction : MonoBehaviour {
                 Firebase.Database.DatabaseReference player_ref = FirebaseDatabase.DefaultInstance.GetReference("player/" + auth.getPlayerUID() + "/property");
 
                 // Update the current price of the auction.
-                Dictionary<string, System.Object>  purcahse_house = new Dictionary<string, System.Object>();
+                Dictionary<string, System.Object> purchase_house = new Dictionary<string, System.Object>();
 
                 // Add the price we paid for the house, dont need the rest of the details.
-                purcahse_house["purchase_price"] = price;
+                purchase_house["purchase_price"] = price;
  
                 Dictionary<string, System.Object> house_update = new Dictionary<string, System.Object>();
-                house_update[house_uid] = purcahse_house;
+                house_update[house_uid] = purchase_house;
 
                 player_ref.UpdateChildrenAsync(house_update);
+
+                // Update the house to have a owner.
+                Firebase.Database.DatabaseReference house_ref = FirebaseDatabase.DefaultInstance.GetReference("houses/" + house_uid);
+
+                // Update the current price of the auction.
+                Dictionary<string, System.Object> house = new Dictionary<string, System.Object>();
+
+                // Add the price we paid for the house, dont need the rest of the details.
+                house["owner"] = auth.getPlayerUID();
+
+                //Dictionary<string, System.Object> house_update = new Dictionary<string, System.Object>();
+                //house_update[house_uid] = purcahse_house;
+
+                house_ref.UpdateChildrenAsync(house);
 
                 // TODO Work out how much money the player has, deduct the house price - the loan amount the equity on the house they already own
             }
@@ -114,29 +139,29 @@ public class LiveAuction : MonoBehaviour {
         } else {
             auction.GetValueAsync().ContinueWith(task => {
 
-                    if (task.IsFaulted) {
-                        Debug.Log("Unable to get auctions: " + auth.getPlayerUID());
-                    } else if (task.IsCompleted) {
-                        DataSnapshot snapshot = task.Result;
+                if (task.IsFaulted) {
+                    Debug.Log("Unable to get auctions: " + auth.getPlayerUID());
+                } else if (task.IsCompleted) {
+                    DataSnapshot snapshot = task.Result;
 
-                        foreach (DataSnapshot child in snapshot.Children) {
-                            Debug.Log(child.Key + "current_price");
-                            if (child.Key.Equals("current_price")) {
-                                //price = System.Convert.ToDouble(child.Value);
-                                //current_price.text = "" + string.Format("{0:c}", price);
-                            }
-                        if (child.Key.Equals("closed")) {
-                            closed = System.Convert.ToBoolean(child.Value);
+                    foreach (DataSnapshot child in snapshot.Children) {
+                        Debug.Log(child.Key + "current_price");
+                        if (child.Key.Equals("current_price")) {
+                            //price = System.Convert.ToDouble(child.Value);
                             //current_price.text = "" + string.Format("{0:c}", price);
                         }
-                        if(child.Key.Equals("last_bidder")) {
-                            isWinner(child.Value.ToString());
-                        }
-
+                    if (child.Key.Equals("closed")) {
+                        closed = System.Convert.ToBoolean(child.Value);
+                        //current_price.text = "" + string.Format("{0:c}", price);
                     }
+                    if(child.Key.Equals("last_bidder")) {
+                        isWinner(child.Value.ToString());
                     }
 
-                });
+                }
+                }
+
+            });
         }
         Debug.Log("HandleChildChanged");
     }
@@ -184,8 +209,7 @@ public class LiveAuction : MonoBehaviour {
                     foreach (DataSnapshot child in snapshot.Children) {
                         current_auction_uid = child.Key;
 
-                        Firebase.Database.DatabaseReference dbref = FirebaseDatabase.DefaultInstance.GetReference("auctions/" + current_auction_uid + "");
-                        dbref.ChildChanged += HandleChildChanged;
+                        FirebaseDatabase.DefaultInstance.GetReference("live-auctions/" + current_auction_uid + "").ChildChanged += HandleChildChanged;
                     }
                     getAuctionDetails();
                 }
@@ -194,16 +218,22 @@ public class LiveAuction : MonoBehaviour {
 
     void getAuctionDetails() {
         // Refrence to the database
-        auction = FirebaseDatabase.DefaultInstance.GetReference("auctions/" + current_auction_uid + "");
+        auction = FirebaseDatabase.DefaultInstance.GetReference("live-auctions/" + current_auction_uid + "");
         auction.GetValueAsync().ContinueWith(task => {
-                if (task.IsFaulted) {
-                    Debug.Log("Unable to get auctions: " + auth.getPlayerUID());
-                } else if (task.IsCompleted) {
-                    DataSnapshot snapshot = task.Result;
-                    System.DateTime auction_time = System.DateTime.Now;
+            if (task.IsFaulted) {
+                Debug.Log("Unable to get auctions: " + auth.getPlayerUID());
+            } else if (task.IsCompleted) {
+                DataSnapshot snapshot = task.Result;
+                System.DateTime auction_time = System.DateTime.Now;
+
+                if (snapshot.ChildrenCount == 0) {
+                    Debug.Log("Not registered to bid in any upcoming auctions");
+                    LoadMenu menu = (LoadMenu)GameObject.Find("Setup").GetComponent(typeof(LoadMenu));
+                    menu.LoadGameHome();
+                } else {
 
                     foreach (DataSnapshot child in snapshot.Children) {
-                        if(child.Key.Equals("current_price")) {
+                        if (child.Key.Equals("current_price")) {
                             price = System.Convert.ToDouble(child.Value);
                             current_price.text = string.Format("{0:c}", price);
                         }
@@ -226,8 +256,10 @@ public class LiveAuction : MonoBehaviour {
                     }
 
                     auction_date = auction_date.Add(auction_time.TimeOfDay);
+                    auction_close_datetime = auction_date.AddMinutes(10);
 
                 }
+            }
             });
         auction.ChildChanged += HandleChildChanged;
 
@@ -247,13 +279,13 @@ public class LiveAuction : MonoBehaviour {
 
         // Check to see if we can bid and if hasn't gone past the auction time.
         System.DateTime date = System.DateTime.Now;
-        if (date < auction_date) {
+        if (date < auction_close_datetime) {
 
             Dictionary<string, System.Object> auction_result = new Dictionary<string, System.Object>();
 
             // Add who was the last bidder and the current price its at
             auction_result["last_bidder"] = auth.getPlayerUID();
-            auction_result["current_price"] = price+bid_amount;
+            //auction_result["current_price"] = price+bid_amount;
 
             auction.UpdateChildrenAsync(auction_result);
 
@@ -281,7 +313,10 @@ public class LiveAuction : MonoBehaviour {
             Debug.Log("Bidding");
         } else {
             Debug.Log("Unable to bid, auction over.");
+
+            isWinner(auth.getPlayerUID());
             closeAuction();
+
         }
     }
 }

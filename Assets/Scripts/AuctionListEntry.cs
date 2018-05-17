@@ -27,7 +27,7 @@ public class AuctionListEntry : MonoBehaviour {
         Authentication auth = (Authentication)GameObject.Find("Authentication").GetComponent(typeof(Authentication));
 
         // Add an entry to the auction for a list of registered bidders
-        dbref = FirebaseDatabase.DefaultInstance.GetReference("auctions/"+ auction_uid+"/bidders");
+        dbref = FirebaseDatabase.DefaultInstance.GetReference("live-auctions/"+ auction_uid+"/bidders");
 
         Dictionary<string, System.Object> result = new Dictionary<string, System.Object>();
         result[auth.getPlayerUID()] = auth.getPlayerName();
