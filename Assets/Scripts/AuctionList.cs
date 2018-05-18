@@ -73,24 +73,25 @@ public class AuctionList : MonoBehaviour {
         Debug.Log("Finding house without a owner");
        Firebase.Database.DatabaseReference houses = FirebaseDatabase.DefaultInstance.GetReference("houses/");
         string house_uid = "";
+        string owner= "";
         houses.GetValueAsync().ContinueWith(task => {
             if (task.IsFaulted) {
                 Debug.Log("Unable to retreive auctions");
             } else if (task.IsCompleted) {
                 DataSnapshot snapshot = task.Result;
-
+                Debug.Log("Finding a house.");
                 foreach (DataSnapshot child in snapshot.Children) {
-                    if (child.Key.Equals("owner")) {
-                        // if we have an owner dont want to sell.
-                        Debug.Log("Owner: " + child.Value);
-                    } else {
-                        // we should return here but this is okay
-                        if (house_uid.Equals("")) {
-                            house_uid = child.Key.ToString();
-                            Debug.Log("Unowned house found: " + house_uid);
-                            createAuction(house_uid);
-                        }
+                    
+                    IDictionary house = (IDictionary)child.Value;
+                    owner = (string)house["owner"];
+
+                    // we should return here but this is okay
+                    if (owner == null && house_uid.Equals("")) {
+                        house_uid = child.Key.ToString();
+                        Debug.Log("Unowned house found: " + house_uid);
+                        createAuction(house_uid);
                     }
+
                 }
             }
         });
@@ -116,18 +117,7 @@ public class AuctionList : MonoBehaviour {
 
                     foreach (DataSnapshot child in snapshot.Children) {
                         // Create a event from the data retrieved
-                        Debug.Log("Creating new child listing: "+child.Key);
-                        IDictionary dictUser = (IDictionary)child.Value;
-                        AuctionListItem item = new AuctionListItem(dictUser);
-                        auction_list[child.Key] = item;
-
-                        // Create a game object, currently just a button, should be something fancier later.
-                        GameObject entry = Instantiate(eventTemplate) as GameObject;
-                        entry.SetActive(true);
-
-                        entry.GetComponent<AuctionListEntry>().SetText(item.ToString(), child.Key);
-                        entry.transform.SetParent(eventTemplate.transform.parent, false);
- 
+                        createAuctionListItem(child);
                     }
 
                 }
@@ -135,6 +125,23 @@ public class AuctionList : MonoBehaviour {
     }
 
     public void onBtnClicked(string auid) {
+
+    }
+
+    void createAuctionListItem(DataSnapshot child) {
+        // Create a event from the data retrieved
+        Debug.Log("Creating new child listing: " + child.Key);
+        IDictionary dictUser = (IDictionary)child.Value;
+        AuctionListItem item = new AuctionListItem(dictUser);
+        auction_list[child.Key] = item;
+
+        // Create a game object, currently just a button, should be something fancier later.
+        GameObject entry = Instantiate(eventTemplate) as GameObject;
+        entry.SetActive(true);
+
+        entry.GetComponent<AuctionListEntry>().SetText(item.ToString(), child.Key);
+        entry.transform.SetParent(eventTemplate.transform.parent, false);
+
 
     }
 
@@ -151,7 +158,8 @@ public class AuctionList : MonoBehaviour {
             Debug.LogError(args.DatabaseError.Message);
             return;
         }
-        Debug.Log("HandleChildAdded" + args);
+
+        createAuctionListItem(args.Snapshot);
     }
 
     void HandleChildRemoved(object sender, ChildChangedEventArgs args) {
