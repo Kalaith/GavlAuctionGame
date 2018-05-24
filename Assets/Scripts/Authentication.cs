@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 using Firebase.Auth;
+using Firebase.Database;
 
 public class Authentication : MonoBehaviour {
     FirebaseAuth auth;
@@ -82,7 +83,7 @@ public class Authentication : MonoBehaviour {
 
             // Firebase user has been created.
             FirebaseUser newUser = task.Result;
-            p = new Player(newUser.UserId, newUser.DisplayName, email.text, null);
+            p = new Player(newUser.UserId, newUser.DisplayName, email.text, null, 50000);
 
             menu.LoadGameHome();
         });
@@ -100,7 +101,9 @@ public class Authentication : MonoBehaviour {
 
             FirebaseUser newUser = task.Result;
 
-            p = new Player(newUser.UserId, newUser.DisplayName, email.text, null);
+            p = new Player(newUser.UserId, newUser.DisplayName, email.text, null, 0);
+
+            getPlayerCash();
 
             menu.LoadGameHome();
         });
@@ -114,4 +117,38 @@ public class Authentication : MonoBehaviour {
         return p.DisplayName;
     }
 
+    // Gets the players cash on hand and uses it to update the play field, can be called to update
+    public void getPlayerCash() {
+
+        FirebaseDatabase.DefaultInstance.GetReference("player/" + p.Uid + "/cash_on_hand")
+            .GetValueAsync().ContinueWith(task => {
+                if (task.IsFaulted) {
+                    Debug.Log("Unable to get auctions for player: " + p.Uid);
+                } else if (task.IsCompleted) {
+                    DataSnapshot snapshot = task.Result;
+
+                    foreach (DataSnapshot child in snapshot.Children) {
+                        Debug.Log("Cash Key"+child.Key);
+                        Debug.Log("Cash Value" + child.Key);
+                        p.CashOnHand = (double)child.Value;
+                    }
+                }
+            });
+
+    }
+
+    // Updates the players cash on hand value.
+    public void setPlayerCash(double cash) {
+
+        Firebase.Database.DatabaseReference player = FirebaseDatabase.DefaultInstance.GetReference("player/" + p.Uid);
+
+        Dictionary<string, System.Object> update_player_cash = new Dictionary<string, System.Object>();
+
+        // Add who was the last bidder and the current price its at
+        update_player_cash["cash_on_hand"] = cash;
+
+        player.UpdateChildrenAsync(update_player_cash);
+
+
+    }
 }

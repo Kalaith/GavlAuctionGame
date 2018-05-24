@@ -11,9 +11,11 @@ public class LiveAuction : MonoBehaviour {
     public Text house_address;
     public Text winning_bidder;
     public Text current_price;
-
+    
     public double price;
     private double bid_amount = 10000;
+    private double current_player_bid = 0;
+
     Authentication auth;
 
     string current_auction_uid;
@@ -21,7 +23,7 @@ public class LiveAuction : MonoBehaviour {
     // this is set to the start time + 10mins
     System.DateTime auction_date;
     // This is set to the end of the auction time.
-    System.DateTime auction_close_datetime;
+    System.DateTime auction_close_date;
 
     Firebase.Database.DatabaseReference auction;
     Firebase.Database.DatabaseReference auction_log;
@@ -65,8 +67,8 @@ public class LiveAuction : MonoBehaviour {
         result["house_uid"] = house_uid;
         result["last_bidder"] = auth.getPlayerUID();
         result["price"] = price;
-        result["date"] = auction_close_datetime.ToShortDateString();
-        result["time"] = auction_close_datetime.ToShortTimeString();
+        result["date"] = auction_close_date.ToShortDateString();
+        result["time"] = auction_close_date.ToShortTimeString();
 
         Debug.Log("Updating closed auction");
         auction.UpdateChildrenAsync(result);
@@ -84,7 +86,7 @@ public class LiveAuction : MonoBehaviour {
     bool isAuctionOver() {
         System.DateTime date = System.DateTime.Now;
         
-        if (date > auction_close_datetime) {
+        if (date > auction_close_date) {
             //Debug.Log("Time to close the auction");
             return true;
         }
@@ -182,6 +184,7 @@ public class LiveAuction : MonoBehaviour {
                     price += bid_amount;
                     current_price.text = "" + string.Format("{0:c}", price);
 
+                    auction_text.text = "New Bid: "+string.Format("{0:c}", bid_amount)+"";
                     bids++;
 
                     System.DateTime date = System.DateTime.Now;
@@ -244,7 +247,7 @@ public class LiveAuction : MonoBehaviour {
                         if (child.Key.Equals("time")) {
                             auction_time = System.Convert.ToDateTime(child.Value);
 
-                            auction_time = auction_time.AddMinutes(10);
+                            //auction_time = auction_time.AddMinutes(10);
                             current_price.text = string.Format("{0:c}", price);
                         }
                         if (child.Key.Equals("house_uid")) {
@@ -256,8 +259,8 @@ public class LiveAuction : MonoBehaviour {
                     }
 
                     auction_date = auction_date.Add(auction_time.TimeOfDay);
-                    auction_close_datetime = auction_date.AddMinutes(10);
-
+                    auction_close_date = auction_date.AddMinutes(10);
+                    Debug.Log("Auction Close Time: "+auction_close_date);
                 }
             }
             });
@@ -279,38 +282,49 @@ public class LiveAuction : MonoBehaviour {
 
         // Check to see if we can bid and if hasn't gone past the auction time.
         System.DateTime date = System.DateTime.Now;
-        if (date < auction_close_datetime) {
+        Debug.Log(date);
+        Debug.Log(auction_close_date);
+        
+        // is the auction currently open and does the player have enough cash on hand to pay for it.
+        if (date < auction_close_date) {
+            // currently this would not stop them from duel bidding on auctions, so the game shouldn't allow it.
+            if (auth.p.CashOnHand >= (price + bid_amount)) {
+                // update how much the player has bid.
+                current_player_bid += bid_amount;
+                Dictionary<string, System.Object> auction_result = new Dictionary<string, System.Object>();
 
-            Dictionary<string, System.Object> auction_result = new Dictionary<string, System.Object>();
+                // Add who was the last bidder and the current price its at
+                auction_result["last_bidder"] = auth.getPlayerUID();
+                //auction_result["current_price"] = price+bid_amount;
 
-            // Add who was the last bidder and the current price its at
-            auction_result["last_bidder"] = auth.getPlayerUID();
-            //auction_result["current_price"] = price+bid_amount;
+                auction.UpdateChildrenAsync(auction_result);
 
-            auction.UpdateChildrenAsync(auction_result);
+                Dictionary<string, System.Object> log_result;
 
-            Dictionary<string, System.Object> log_result;
+                // Update the current price of the auction.
+                log_result = new Dictionary<string, System.Object>();
+                //result["current_price"] = price + bid_amount;
+                //auction.UpdateChildrenAsync(result);
 
-            // Update the current price of the auction.
-            log_result = new Dictionary<string, System.Object>();
-            //result["current_price"] = price + bid_amount;
-            //auction.UpdateChildrenAsync(result);
+                // Create a log of the bid and add to DB
+                log_result["bidder_uid"] = auth.getPlayerUID();
+                //log_result["bid_amount"] = bid_amount;
 
-            // Create a log of the bid and add to DB
-            log_result["bidder_uid"] = auth.getPlayerUID();
-            //log_result["bid_amount"] = bid_amount;
+                log_result["date"] = date.ToShortDateString();
+                log_result["time"] = date.ToShortTimeString();
 
-            log_result["date"] = date.ToShortDateString();
-            log_result["time"] = date.ToShortTimeString();
+                // Create a new id for each log entry
+                string key = auction_log.Push().Key;
+                Dictionary<string, System.Object> log_update = new Dictionary<string, System.Object>();
+                log_update[key] = log_result;
 
-            // Create a new id for each log entry
-            string key = auction_log.Push().Key;
-            Dictionary<string, System.Object> log_update = new Dictionary<string, System.Object>();
-            log_update[key] = log_result;
+                auction_log.UpdateChildrenAsync(log_update);
 
-            auction_log.UpdateChildrenAsync(log_update);
 
-            Debug.Log("Bidding");
+                Debug.Log("Bidding");
+            } else {
+                Debug.Log("Not enough money to keep bidding.");
+            }
         } else {
             Debug.Log("Unable to bid, auction over.");
 

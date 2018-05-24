@@ -12,12 +12,14 @@ public class Player {
     string emailAddress;
     System.Uri photoUrl;
     string uid;
+    double cashOnHand;
 
-    public Player(string uid, string dn, string ea, System.Uri pu) {
+    public Player(string uid, string dn, string ea, System.Uri pu, double coh) {
         this.uid = uid;
         DisplayName = dn;
         EmailAddress = ea;
         PhotoUrl = pu;
+        cashOnHand = coh;
     }
 
     public string DisplayName {
@@ -57,6 +59,16 @@ public class Player {
 
         set {
             uid = value;
+        }
+    }
+
+    public double CashOnHand {
+        get {
+            return cashOnHand;
+        }
+
+        set {
+            cashOnHand = value;
         }
     }
 }
