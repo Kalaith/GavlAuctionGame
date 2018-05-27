@@ -83,7 +83,7 @@ public class Authentication : MonoBehaviour {
 
             // Firebase user has been created.
             FirebaseUser newUser = task.Result;
-            p = new Player(newUser.UserId, newUser.DisplayName, email.text, null, 50000);
+            p = new Player(newUser.UserId, newUser.DisplayName, email.text, null, 50000, 0, 0);
 
             menu.LoadGameHome();
         });
@@ -101,9 +101,13 @@ public class Authentication : MonoBehaviour {
 
             FirebaseUser newUser = task.Result;
 
-            p = new Player(newUser.UserId, newUser.DisplayName, email.text, null, 0);
+            p = new Player(newUser.UserId, newUser.DisplayName, email.text, null, 0, 0, 0);
 
             getPlayerCash();
+            p.updatePlayerPortfolioValue();
+            p.updatePlayerHousesOwned();
+
+            Debug.Log("Load Game Home");
 
             menu.LoadGameHome();
         });
@@ -134,7 +138,6 @@ public class Authentication : MonoBehaviour {
                     }
                 }
             });
-
     }
 
     // Updates the players cash on hand value.

@@ -11,8 +11,14 @@ public class AuctionList : MonoBehaviour {
 
     Dictionary<string, AuctionListItem> auction_list = new Dictionary<string, AuctionListItem>();
 
-    [SerializeField]
-    private GameObject eventTemplate;
+    public GameObject Auction1;
+    public GameObject Auction2;
+    public GameObject Auction3;
+    public GameObject Auction4;
+    public GameObject Auction5;
+    public GameObject Auction6;
+
+    int auction_count = 0;
 
     // Use this for initialization
     void Start () {
@@ -103,7 +109,7 @@ public class AuctionList : MonoBehaviour {
     // If an auction is on when they visit the screen they should be taken to the auction in process.
     // Need to be able to get the list, have it refresh, register for bid and view 
     void listActions() {
-        FirebaseDatabase.DefaultInstance
+        /*FirebaseDatabase.DefaultInstance
             .GetReference("live-auctions").OrderByChild("date")
             .GetValueAsync().ContinueWith(task => {
                 if (task.IsFaulted) {
@@ -121,13 +127,35 @@ public class AuctionList : MonoBehaviour {
                     }
 
                 }
-        });
+        });*/
     }
 
-    public void onBtnClicked(string auid) {
-
+    public void viewHouseAuction(string uid) {
+        Debug.Log("House clicked: "+uid);
+        LoadMenu menu = (LoadMenu)GameObject.Find("Setup").GetComponent(typeof(LoadMenu));
+        menu.LoadAuctionHouse();
+        RegisterBidding bid = (RegisterBidding)GameObject.Find("HouseAuctionScreen").GetComponent(typeof(RegisterBidding));
+        bid.setHouse(uid);
     }
 
+    // populates the game object auction list item with the auction details
+    void setAuctionListItem(GameObject auction, string house_uid, string add, string sub, string pri, string da) {
+        Text address = auction.transform.Find("Address").gameObject.GetComponent<Text>();
+        address.text = add;
+        Text suburb = auction.transform.Find("Suburb").gameObject.GetComponent<Text>();
+        suburb.text = sub;
+        Text price = auction.transform.Find("HousePrice").gameObject.GetComponent<Text>();
+        price.text = pri;
+        Text auctionDate = auction.transform.Find("AuctionDate").gameObject.GetComponent<Text>();
+        auctionDate.text = da;
+        // Add an event listener which when clicked calls to view the house.
+        auction.SetActive(true);
+        Debug.Log("House: " + house_uid);
+        auction.GetComponent<Button>().onClick.AddListener(() => viewHouseAuction(house_uid));
+        Debug.Log("House2: " + house_uid);
+    }
+
+    // Gets a new entry into the auction list screen
     void createAuctionListItem(DataSnapshot child) {
         // Create a event from the data retrieved
         Debug.Log("Creating new child listing: " + child.Key);
@@ -135,12 +163,32 @@ public class AuctionList : MonoBehaviour {
         AuctionListItem item = new AuctionListItem(dictUser);
         auction_list[child.Key] = item;
 
+        auction_count++;
+        if (auction_count == 1) {
+            setAuctionListItem(Auction1, child.Key, "123 Test Street", "Suburb", "$100,000", "27/5/2018 11:00PM");
+            Auction1.SetActive(true);
+        }
+        if (auction_count == 2) {
+            Auction2.SetActive(true);
+        }
+        if (auction_count == 3) {
+            Auction3.SetActive(true);
+        }
+        if (auction_count == 4) {
+            Auction4.SetActive(true);
+        }
+        if (auction_count == 5) {
+            Auction5.SetActive(true);
+        }
+        if (auction_count == 6) {
+            Auction6.SetActive(true);
+        }
         // Create a game object, currently just a button, should be something fancier later.
-        GameObject entry = Instantiate(eventTemplate) as GameObject;
-        entry.SetActive(true);
+        //GameObject entry = Instantiate(eventTemplate) as GameObject;
+        //entry.SetActive(true);
 
-        entry.GetComponent<AuctionListEntry>().SetText(item.ToString(), child.Key);
-        entry.transform.SetParent(eventTemplate.transform.parent, false);
+        //entry.GetComponent<AuctionListEntry>().SetText(item.ToString(), child.Key);
+        //entry.transform.SetParent(eventTemplate.transform.parent, false);
 
 
     }
@@ -153,12 +201,12 @@ public class AuctionList : MonoBehaviour {
         Debug.Log("HandleChildChanged" + args);
     }
 
+    // This is called when a child is added, its also called when first loaded for exisiting entries.
     void HandleChildAdded(object sender, ChildChangedEventArgs args) {
         if (args.DatabaseError != null) {
             Debug.LogError(args.DatabaseError.Message);
             return;
         }
-
         createAuctionListItem(args.Snapshot);
     }
 

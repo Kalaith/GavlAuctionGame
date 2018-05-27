@@ -7,77 +7,87 @@ public class LoadMenu : MonoBehaviour {
 
     public GameObject loginPanel;
     public GameObject homePanel;
-    public GameObject portfolioPanel;
-    public GameObject auctionListPanel;
+    public GameObject profileScreen;
+    public GameObject portfolioScreen;
+    public GameObject auctionListScreen;
     public GameObject auctionPanel;
-    public GameObject marketResearchPanel;
-    public GameObject rankingPanel;
-    public GameObject settingsPanel;
-
-    public GameObject newsPanel;
-    public GameObject menuPanel;
+    public GameObject UIPanel;
+    public GameObject splashScreen;
+    public GameObject HouseDetailsScreen;
+    public GameObject auctionHouseScreen;
 
     // Use this for initialization
     void Start() {
+        Debug.Log("Starting the game");
+
+        StartCoroutine(LoadGameLogin());
     }
 
     // Load Functions for each of the diffrent screens
-    public void LoadGameLogin() {
+    public IEnumerator LoadGameLogin() {
         disableAllPanels();
 
-        newsPanel.SetActive(false);
-        menuPanel.SetActive(false);
+        splashScreen.SetActive(true);
+
+        yield return new WaitForSeconds(3);
+        splashScreen.SetActive(false);
         loginPanel.SetActive(true);
+
     }
-    
+
+    public void LoadAuctionHouse() {
+        disableAllPanels();
+
+        UIPanel.SetActive(true);
+        auctionHouseScreen.SetActive(true);
+    }
+
     public void LoadGameHome() {
         disableAllPanels();
 
+        UIPanel.SetActive(true);
         homePanel.SetActive(true);
+    }
+
+    public void LoadProfileScreen() {
+        disableAllPanels();
+
+        UIPanel.SetActive(true);
+        profileScreen.SetActive(true);
     }
 
     public void LoadGamePortfolio() {
         disableAllPanels();
-        portfolioPanel.SetActive(true);
+
+        UIPanel.SetActive(true);
+        portfolioScreen.SetActive(true);
     }
 
     public void LoadGameAuctionList() {
         disableAllPanels();
-        auctionListPanel.SetActive(true);
+
+        UIPanel.SetActive(true);
+        auctionListScreen.SetActive(true);
     }
 
     public void LoadGameAuction() {
         disableAllPanels();
+
+        UIPanel.SetActive(true);
         auctionPanel.SetActive(true);
     }
 
-    public void LoadGameResearch() {
-        disableAllPanels();
-        marketResearchPanel.SetActive(true);
-    }
 
-    public void LoadGameRanking() {
-        disableAllPanels();
-        rankingPanel.SetActive(true);
-    }
-
-    public void LoadGameSettings() {
-        disableAllPanels();
-        settingsPanel.SetActive(true);
-    }
 
     public void disableAllPanels() {
+        splashScreen.SetActive(false);
+        UIPanel.SetActive(false);
         loginPanel.SetActive(false);
         homePanel.SetActive(false);
-        portfolioPanel.SetActive(false);
-        auctionListPanel.SetActive(false);
+        profileScreen.SetActive(false);
+        portfolioScreen.SetActive(false);
+        auctionListScreen.SetActive(false);
         auctionPanel.SetActive(false);
-        marketResearchPanel.SetActive(false);
-        rankingPanel.SetActive(false);
-        settingsPanel.SetActive(false);
-
-        // Lets enable this here, because only login disables these
-        newsPanel.SetActive(true);
-        menuPanel.SetActive(true);
+        auctionHouseScreen.SetActive(false);
     }
 }
