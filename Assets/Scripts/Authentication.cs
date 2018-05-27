@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-
+using System;
 using Firebase.Auth;
 using Firebase.Database;
 
@@ -130,12 +130,14 @@ public class Authentication : MonoBehaviour {
                     Debug.Log("Unable to get auctions for player: " + p.Uid);
                 } else if (task.IsCompleted) {
                     DataSnapshot snapshot = task.Result;
+                    Debug.Log("Looking for Cash ");
 
-                    foreach (DataSnapshot child in snapshot.Children) {
-                        Debug.Log("Cash Key"+child.Key);
-                        Debug.Log("Cash Value" + child.Key);
-                        p.CashOnHand = (double)child.Value;
-                    }
+                    Double Cash = System.Convert.ToDouble(snapshot.GetValue(true));
+
+                    p.CashOnHand = Cash;
+                    Debug.Log("Cash Found"+ p.CashOnHand);
+
+
                 }
             });
     }

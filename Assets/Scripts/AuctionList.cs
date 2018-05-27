@@ -135,7 +135,7 @@ public class AuctionList : MonoBehaviour {
         LoadMenu menu = (LoadMenu)GameObject.Find("Setup").GetComponent(typeof(LoadMenu));
         menu.LoadAuctionHouse();
         RegisterBidding bid = (RegisterBidding)GameObject.Find("HouseAuctionScreen").GetComponent(typeof(RegisterBidding));
-        bid.setHouse(uid);
+        bid.setHouse(new House("", 0, "", ""), uid);
     }
 
     // populates the game object auction list item with the auction details

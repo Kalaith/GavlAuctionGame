@@ -11,7 +11,9 @@ public class LiveAuction : MonoBehaviour {
     public Text house_address;
     public Text winning_bidder;
     public Text current_price;
-    
+    public Text player_price;
+    public Text time_remaining;
+
     public double price;
     private double bid_amount = 10000;
     private double current_player_bid = 0;
@@ -35,12 +37,12 @@ public class LiveAuction : MonoBehaviour {
 
     bool closed;
     string house_uid;
-
+    float timeLeft;
+    float minutes;
+    float seconds;
     // Use this for initialization
     void Start () {
 
-        winning_bidder.text = "Opening Price";
-        current_price.text = "0";
         bids = 0;
 
         // Object containing the authenticated user.
@@ -48,10 +50,16 @@ public class LiveAuction : MonoBehaviour {
 
         // Gets an auction, quick and dirty return the first.
         getPlayerAuction();
+        timeLeft = 600;
     }
 
     // Update is called once per frame
     void Update() {
+
+        timeLeft -= Time.deltaTime;
+        minutes = timeLeft / 60;
+        time_remaining.text = "" + Mathf.Floor(minutes) + ""+ " remaining";
+
     }
 
     /// <summary>
@@ -220,6 +228,7 @@ public class LiveAuction : MonoBehaviour {
     }
 
     void getAuctionDetails() {
+        Debug.Log("Auction Details" + current_auction_uid);
         // Refrence to the database
         auction = FirebaseDatabase.DefaultInstance.GetReference("live-auctions/" + current_auction_uid + "");
         auction.GetValueAsync().ContinueWith(task => {
@@ -234,7 +243,7 @@ public class LiveAuction : MonoBehaviour {
                     LoadMenu menu = (LoadMenu)GameObject.Find("Setup").GetComponent(typeof(LoadMenu));
                     menu.LoadGameHome();
                 } else {
-
+                    Debug.Log("Auction Details");
                     foreach (DataSnapshot child in snapshot.Children) {
                         if (child.Key.Equals("current_price")) {
                             price = System.Convert.ToDouble(child.Value);
@@ -291,6 +300,9 @@ public class LiveAuction : MonoBehaviour {
             if (auth.p.CashOnHand >= (price + bid_amount)) {
                 // update how much the player has bid.
                 current_player_bid += bid_amount;
+
+                player_price.text = (string.Format("{0:c}", (price + bid_amount)));
+
                 Dictionary<string, System.Object> auction_result = new Dictionary<string, System.Object>();
 
                 // Add who was the last bidder and the current price its at
@@ -324,6 +336,7 @@ public class LiveAuction : MonoBehaviour {
                 Debug.Log("Bidding");
             } else {
                 Debug.Log("Not enough money to keep bidding.");
+                Debug.Log("Player Cash: "+auth.p.CashOnHand);
             }
         } else {
             Debug.Log("Unable to bid, auction over.");
