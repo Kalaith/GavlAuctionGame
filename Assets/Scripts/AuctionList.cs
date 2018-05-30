@@ -60,11 +60,17 @@ public class AuctionList : MonoBehaviour {
             });
     }
 
-    void createAuction(string house_uid) {
+    public double getHousePrice() {
+
+        return 100000;
+    }
+
+    void createAuction(string house_uid, string address, string suburb) {
         Debug.Log("Creating a new auction "+house_uid);
         Firebase.Database.DatabaseReference auctions = FirebaseDatabase.DefaultInstance.GetReference("live-auctions");
         string key = auctions.Push().Key;
-        AuctionListItem entry = new AuctionListItem(house_uid, System.DateTime.Now, 0, 100000);
+        double price = getHousePrice();
+        AuctionListItem entry = new AuctionListItem(house_uid, System.DateTime.Now, 0, price, price, address, suburb);
         Dictionary<string, System.Object> auctionListItem = entry.ToDictionary();
 
         Dictionary<string, System.Object> childUpdates = new Dictionary<string, System.Object>();
@@ -90,12 +96,14 @@ public class AuctionList : MonoBehaviour {
                     
                     IDictionary house = (IDictionary)child.Value;
                     owner = (string)house["owner"];
+                    string address = (string)house["address"];
+                    string suburb = (string)house["suburb"];
 
                     // we should return here but this is okay
                     if (owner == null && house_uid.Equals("")) {
                         house_uid = child.Key.ToString();
-                        Debug.Log("Unowned house found: " + house_uid);
-                        createAuction(house_uid);
+                        Debug.Log("Unowned house found: " + house_uid +" Address"+address+" Suburb"+suburb);
+                        createAuction(house_uid, address, suburb);
                     }
 
                 }
@@ -162,25 +170,31 @@ public class AuctionList : MonoBehaviour {
         IDictionary dictUser = (IDictionary)child.Value;
         AuctionListItem item = new AuctionListItem(dictUser);
         auction_list[child.Key] = item;
+        Debug.Log(item.ToString());
 
         auction_count++;
         if (auction_count == 1) {
-            setAuctionListItem(Auction1, child.Key, "123 Test Street", "Suburb", "$100,000", "27/5/2018 11:00PM");
+            setAuctionListItem(Auction1, child.Key, item.address, item.suburb, string.Format("{0:c}", item.current_price), item.date.ToString());
             Auction1.SetActive(true);
         }
         if (auction_count == 2) {
+            setAuctionListItem(Auction2, child.Key, item.address, item.suburb, string.Format("{0:c}", item.current_price), item.date.ToString());
             Auction2.SetActive(true);
         }
         if (auction_count == 3) {
+            setAuctionListItem(Auction3, child.Key, item.address, item.suburb, string.Format("{0:c}", item.current_price), item.date.ToString());
             Auction3.SetActive(true);
         }
         if (auction_count == 4) {
+            setAuctionListItem(Auction4, child.Key, item.address, item.suburb, string.Format("{0:c}", item.current_price), item.date.ToString());
             Auction4.SetActive(true);
         }
         if (auction_count == 5) {
+            setAuctionListItem(Auction5, child.Key, item.address, item.suburb, string.Format("{0:c}", item.current_price), item.date.ToString());
             Auction5.SetActive(true);
         }
         if (auction_count == 6) {
+            setAuctionListItem(Auction6, child.Key, item.address, item.suburb, string.Format("{0:c}", item.current_price), item.date.ToString());
             Auction6.SetActive(true);
         }
         // Create a game object, currently just a button, should be something fancier later.

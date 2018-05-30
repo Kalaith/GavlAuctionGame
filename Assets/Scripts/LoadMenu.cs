@@ -15,6 +15,7 @@ public class LoadMenu : MonoBehaviour {
     public GameObject splashScreen;
     public GameObject HouseDetailsScreen;
     public GameObject auctionHouseScreen;
+    public GameObject aboutScreen;
 
     // Use this for initialization
     void Start() {
@@ -77,6 +78,13 @@ public class LoadMenu : MonoBehaviour {
         auctionPanel.SetActive(true);
     }
 
+    public void LoadAbout() {
+        disableAllPanels();
+
+        UIPanel.SetActive(true);
+        aboutScreen.SetActive(true);
+    }
+
 
 
     public void disableAllPanels() {
@@ -89,5 +97,6 @@ public class LoadMenu : MonoBehaviour {
         auctionListScreen.SetActive(false);
         auctionPanel.SetActive(false);
         auctionHouseScreen.SetActive(false);
+        aboutScreen.SetActive(false);
     }
 }
